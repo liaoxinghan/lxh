@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.lxh.dao.PeopleDao">
+
+	<cache type="org.mybatis.caches.ehcache.LoggingEhcache" />
+
+	<resultMap type="People" id="peopleMap">
+		<result property="id" column="ID" />
+		<result property="name" column="NAME" />
+		<result property="age" column="AGE" />
+		<result property="phone" column="PHONE" />
+		<collection property="rules" column="ID" javaType="ArrayList"
+			select="cn.lxh.dao.RuleDao.findRuleByPeopleId" fetchType="lazy" />
+	</resultMap>
+
+	<sql id="baseSql">
+		ID,
+		NAME,
+		AGE,
+		PHONE
+	</sql>
+
+	<select id="findPeopleById" parameterType="java.lang.String"
+		useCache="true" resultMap="peopleMap">
+		SELECT
+			ID,
+			NAME,
+			AGE,
+			PHONE
+		FROM
+			PEOPLE
+		WHERE
+			ID = #{id}
+	</select>
+	
+	<select id="findPeople" parameterType="java.lang.String"
+		useCache="true" resultMap="peopleMap">
+		SELECT
+			<include refid="baseSql" />
+		FROM
+			PEOPLE
+	</select>
+
+	<update id="updatePeople" parameterType="cn.lxh.bean.People" flushCache="true">
+		UPDATE PEOPLE
+		<set>
+			<if test="name != null">
+				NAME = #{name},
+			</if>
+			<if test="age != null">
+				AGE = #{age},
+			</if>
+			<if test="phone != null">
+				PHONE = #{phone},
+			</if>
+		</set>
+		WHERE ID = #{id}
+	</update>
+
+	<insert id="addPeople" parameterType="people" flushCache="true">
+		<selectKey resultType="java.lang.String" order="BEFORE"
+			keyProperty="id">
+			select uuid()
+		</selectKey>
+		INSERT INTO
+			PEOPLE(ID,NAME,AGE,PHONE),
+		VALUES
+			(#{id},#{name},#{age},#{phone});
+	</insert>
+	
+	<delete id="deletePeople" flushCache="true" parameterType="String">
+		delete from PEOPLE where ID = #{id}
+	</delete>
+</mapper>

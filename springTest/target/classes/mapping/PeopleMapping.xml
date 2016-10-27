@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.lxh.dao.PeopleDao">
+
+	<cache type="org.mybatis.caches.ehcache.LoggingEhcache" />
+
+	<resultMap type="People" id="peopleMap">
+		<result property="id" column="ID" />
+		<result property="name" column="NAME" />
+		<result property="age" column="AGE" />
+		<result property="phone" column="PHONE" />
+		<collection property="rules" column="ID" javaType="ArrayList"
+			select="cn.lxh.dao.RuleDao.findRuleByPeopleId" fetchType="lazy" />
+	</resultMap>
+
+	<sql id="baseSql">
+		ID,
+		NAME,
+		AGE,
+		PHONE
+	</sql>
+	
+	<sql id="whereSql">
+		<where> 1=1
+			<if test="id != null and id != ''">
+				AND ID = #{id} 
+			</if>
+			<if test="name != null and name != ''">
+				AND NAME LIKE '%${name}%'
+			</if>
+			<if test="ageEnd != null and ageEnd != ''"> 
+				AND AGE &lt;= #{ageEnd}
+			</if>
+			<if test="ageStart != null and ageStart != ''"> 
+				AND AGE >= #{ageStart}
+			</if>
+			<if test="phone != null and phone != ''">
+				AND PHONE = #{phone}
+			</if>
+		</where>
+	</sql>
+
+	<select id="findPeopleById" parameterType="java.lang.String"
+		useCache="true" resultMap="peopleMap">
+		SELECT
+		ID,
+		NAME,
+		AGE,
+		PHONE
+		FROM
+		PEOPLE
+		WHERE
+		ID = #{id}
+	</select>
+
+	<select id="findPeople" parameterType="map"
+		useCache="true" resultMap="peopleMap">
+		SELECT * FROM(
+			SELECT c.*,ROWNUM RN FROM (
+				SELECT
+				<include refid="baseSql" />
+				FROM
+				PEOPLE
+				<include refid="whereSql" />
+			)c WHERE ROWNUM &lt;= (${page}*${rows})
+		)d WHERE RN > (${page - 1}*${rows})
+	</select>
+	
+	<select id="countPeople" parameterType="map"
+		useCache="true" resultType="int">
+		SELECT
+			COUNT(1)
+		FROM
+		PEOPLE
+		<include refid="whereSql" />
+	</select>
+
+	<select id="findPeopleToMap" useCache="true" parameterType="java.lang.String"
+	resultType="java.util.HashMap">
+		SELECT
+	      a.ID p_id,
+	      a.NAME p_name,
+		  a.AGE p_age,
+		  a.PHONE p_phone,
+		  b.ID r_id,
+		  b.TITLE r_title,
+		  b.SCORE r_score
+	    FROM
+	      PEOPLE a LEFT JOIN RULE b
+	    ON
+	      b.PEOPLE_ID = a.ID
+	  		AND
+			a.ID = #{id}
+	</select>
+	
+	<select id="findPeopleToMap1" useCache="true" parameterType="java.lang.String"
+	resultType="java.util.HashMap">
+		SELECT
+	      a.ID p_id,
+	      a.NAME p_name,
+		  a.AGE p_age,
+		  a.PHONE p_phone,
+		  b.ID r_id,
+		  b.TITLE r_title,
+		  b.SCORE r_score
+	    FROM
+	      PEOPLE a, RULE b
+	    WHERE
+	      b.PEOPLE_ID = a.ID
+	  		AND
+			a.ID = #{id}
+	</select>
+
+	<update id="updatePeople" parameterType="cn.lxh.bean.People"
+		flushCache="true">
+		UPDATE PEOPLE
+		<set>
+			<if test="name != null">
+				NAME = #{name},
+			</if>
+			<if test="age != null">
+				AGE = #{age},
+			</if>
+			<if test="phone != null">
+				PHONE = #{phone},
+			</if>
+		</set>
+		WHERE ID = #{id}
+	</update>
+
+	<insert id="addPeople" parameterType="people" flushCache="true">
+		<selectKey resultType="java.lang.String" order="BEFORE"
+			keyProperty="id">
+			select uuid()
+		</selectKey>
+		INSERT INTO
+		PEOPLE(ID,NAME,AGE,PHONE),
+		VALUES
+		(#{id},#{name},#{age},#{phone});
+	</insert>
+
+	<delete id="deletePeople" flushCache="true" parameterType="String">
+		delete from PEOPLE where ID = #{id}
+	</delete>
+</mapper>

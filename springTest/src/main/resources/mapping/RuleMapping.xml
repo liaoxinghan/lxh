@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.lxh.dao.RuleDao">
+
+	<cache type="org.mybatis.caches.ehcache.LoggingEhcache" />
+	<resultMap type="rule" id="ruleMap">
+		<result property="id" column="ID" />
+		<result property="title" column="TITLE" />
+		<result property="score" column="SCORE" />
+		<association property="people" column="PEOPLE_ID"
+			javaType="cn.lxh.bean.People" select="cn.lxh.dao.PeopleDao.findPeopleById"
+			fetchType="lazy"></association>
+	</resultMap>
+	
+	<resultMap type="rule" id="ruleMap1">
+		<result property="id" column="ID" />
+		<result property="title" column="TITLE" />
+		<result property="score" column="SCORE" />
+	</resultMap>
+
+    <sql id="baseSql">
+   		ID,
+		TITLE,
+		SCORE,
+		PEOPLE_ID
+    </sql>
+	<select id="findRuleByPeopleId" parameterType="java.lang.String"
+		useCache="true" resultMap="ruleMap1">
+		SELECT
+			ID,
+			TITLE,
+			SCORE
+		FROM
+			RULE
+		WHERE
+			PEOPLE_ID = #{peopleId}
+	</select>
+	
+	<select id="findRuleById" parameterType="java.lang.String"
+		useCache="true" resultMap="ruleMap">
+		SELECT
+			<include refid="baseSql" />
+		FROM
+			RULE
+		WHERE
+			ID = #{id}
+	</select>
+</mapper>
